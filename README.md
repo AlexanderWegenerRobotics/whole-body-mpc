@@ -6,28 +6,6 @@ optimal control problem up rather than by configuring an existing stack.
 Robot: Unitree G1, 29 DoF, torque controlled. Dynamics with Pinocchio, OCP with
 Crocoddyl (FDDP), plant in MuJoCo. Simulation only.
 
-## Research question
-
-How do formulation choices — centroidal versus full rigid-body dynamics, contact
-model, horizon length, cost structure — trade off tracking quality, robustness and
-solve time in whole-body MPC for tasks where the arms generate significant
-momentum?
-
-The headline task is bimanual loco-manipulation: walk to a table and lift a box,
-with the object carried explicitly in the optimisation and the hand–object forces
-as decision variables, so the controller anticipates the payload instead of
-reacting to it.
-
-## Status
-
-| Milestone | State |
-|---|---|
-| M0 model: G1 verified Pinocchio ↔ MuJoCo | done |
-| M1 plant: spawn, step, query, render, log | done |
-| M2 standing balance and reaching under MPC | next |
-| M3 stepping | |
-| M4 loco-manipulation + ablation | |
-
 ## Install
 
 Pinocchio and Crocoddyl are C++ libraries with Python bindings and must come from

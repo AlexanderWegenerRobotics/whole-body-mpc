@@ -67,22 +67,60 @@ class RobotModel:
         self.v_limit = self.model.velocityLimit[6:].copy()
 
     def frame_id(self, name: str) -> int:
-        raise NotImplementedError
+        fid = self.model.getFrameId(name)
+        if fid >= self.model.nframes:
+            raise KeyError(f"no frame named {name!r}")
+        return int(fid)
 
     def forward(self, q: np.ndarray, v: np.ndarray | None = None) -> None:
-        raise NotImplementedError
+        if v is None:
+            pin.forwardKinematics(self.model, self.data, q)
+        else:
+            pin.forwardKinematics(self.model, self.data, q, v)
+        pin.updateFramePlacements(self.model, self.data)
 
     def frame_pose(self, q: np.ndarray, name: str) -> pin.SE3:
-        raise NotImplementedError
+        self.forward(q)
+        return self.data.oMf[self.frame_id(name)].copy()
 
     def centroidal(self, q: np.ndarray, v: np.ndarray) -> Centroidal:
-        raise NotImplementedError
+        pin.centerOfMass(self.model, self.data, q, v)
+        pin.computeCentroidalMomentum(self.model, self.data, q, v)
+        return Centroidal(
+            com=np.array(self.data.com[0]),
+            linmom=np.array(self.data.hg.linear),
+            angmom=np.array(self.data.hg.angular),
+        )
 
     def gravity_torque(self, q: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
+        """Actuated rows of g(q). The first six are the base wrench the
+        ground supplies through the feet, and no actuator can produce them."""
+        return np.array(pin.computeGeneralizedGravity(self.model, self.data, q)[6:])
+
+    def mass_diagonal(self, q: np.ndarray) -> np.ndarray:
+        """Diagonal of the joint-space mass matrix, actuated rows only.
+
+        Sets the explicit-integration damping ceiling: kd < 2 * M_ii / dt.
+        """
+        mass = pin.crba(self.model, self.data, q)
+        return np.array(np.diag(mass)[6:])
+
+    def tangent_error(
+        self,
+        q: np.ndarray,
+        v: np.ndarray,
+        q_ref: np.ndarray,
+        v_ref: np.ndarray,
+    ) -> np.ndarray:
+        """x - x_ref on the manifold, (NDX,).
+
+        The configuration part is pin.difference, not a subtraction: q holds a
+        unit quaternion and subtracting two of them is meaningless.
+        """
+        return np.concatenate([pin.difference(self.model, q_ref, q), v - v_ref])
 
     def neutral(self) -> np.ndarray:
-        raise NotImplementedError
+        return pin.neutral(self.model)
 
 
 if __name__ == "__main__":

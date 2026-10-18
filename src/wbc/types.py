@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 
 NQ, NV, NU = 36, 35, 29
+NX = NQ + NV
+NDX = 2 * NV
 
 FOOT_CONTACT_GEOMS = (
     "left_foot_heel_in", "left_foot_heel_out",
@@ -58,3 +60,62 @@ class ViewerConfig:
     enabled: bool = False
     realtime_factor: float = 1.0
     camera: str | None = None
+
+@dataclass(frozen=True, slots=True)
+class ControlPlan:
+    """A time-stamped feedforward trajectory with local feedback gains.
+
+    t0 is absolute simulation time; ts are absolute knot times. The tracker
+    evaluates the plan by time, never by index, so a slow or stale plan
+    degrades gracefully instead of silently shifting.
+
+    xs:   (N, NX)        reference states, pinocchio convention
+    taus: (N, NU)        feedforward joint torques
+    Ks:   (N, NU, NDX)   feedback gains, tau = taus + Ks @ (x - xs)
+    """
+    t0: float
+    ts: np.ndarray
+    xs: np.ndarray
+    taus: np.ndarray
+    Ks: np.ndarray
+
+    def __post_init__(self):
+        n = len(self.ts)
+        assert n >= 1
+        assert self.xs.shape == (n, NX), self.xs.shape
+        assert self.taus.shape == (n, NU), self.taus.shape
+        assert self.Ks.shape == (n, NU, NDX), self.Ks.shape
+        assert np.all(np.diff(self.ts) > 0.0) if n > 1 else True
+
+    def index_at(self, t: float) -> int:
+        return int(np.clip(np.searchsorted(self.ts, t, side="right") - 1, 0, len(self.ts) - 1))
+
+    def q_ref(self, i: int) -> np.ndarray:
+        return self.xs[i, :NQ]
+
+    def v_ref(self, i: int) -> np.ndarray:
+        return self.xs[i, NQ:]
+
+
+@dataclass(frozen=True, slots=True)
+class SolveStats:
+    iterations: int = 0
+    cost: float = 0.0
+    regularization: float = 0.0
+    feasibility: float = 0.0
+    wall_ms: float = 0.0
+
+
+@dataclass(frozen=True)
+class ControlConfig:
+    """Posture-hold gains, scaled by each joint's torque authority.
+
+    kp_i = kp_scale * tau_limit_i, so a 139 Nm knee is stiffer than a 5 Nm
+    wrist. kd is scaled the same way but then capped at kd_safety * 2*M_ii/dt,
+    the explicit-integration stability bound for a motor actuator with no
+    velocity term for implicitfast to absorb.
+    """
+    kp_scale: float = 6.0
+    kd_scale: float = 0.08
+    kd_safety: float = 0.5
+    decimation: int = 5
