@@ -47,6 +47,8 @@ conda activate wb-mpc
 python   scripts/run_sim.py --duration 5 --name m1_fall   # headless, logs to runs/
 mjpython scripts/run_sim.py --viewer --rtf 0.25           # macOS needs mjpython
 python   scripts/run_sim.py --no-log
+python   scripts/run_sim.py --duration 5 --video
+python   scripts/render_run.py runs/<dir> --camera side --speed 0.25
 ```
 
 Each run writes `runs/<timestamp>_<name>/` with `log.h5`, `meta.yaml` and the
@@ -70,6 +72,7 @@ src/wbc/
   model.py       Pinocchio model, geometry, limits
   sim.py         MuJoCo plant, MuJoCo↔Pinocchio conversion, viewer
   recording.py   multi-rate logger, HDF5 backend, run reader
+  render.py      offline video from a logged run
   ocp.py         optimal control problem
   control.py     MPC loop and low-level tracker
 model/           G1 URDF, MJCF, meshes

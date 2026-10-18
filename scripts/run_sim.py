@@ -15,6 +15,7 @@ from wbc.recording import (
     run_metadata,
     write_meta,
 )
+from wbc.render import load_model, render_run, save_flat_model
 from wbc.sim import MujocoPlant, Viewer
 from wbc.types import NQ, NU, NV, REPO_ROOT, SimConfig, ViewerConfig
 
@@ -28,6 +29,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--rtf", type=float, default=1.0)
     p.add_argument("--name", default="run")
     p.add_argument("--no-log", action="store_true")
+    p.add_argument("--video", action="store_true")
+    p.add_argument("--fps", type=int, default=60)
+    p.add_argument("--video-speed", type=float, default=1.0)
+    p.add_argument("--video-camera", default=None)
+    p.add_argument("--video-distance", type=float, default=4.0)
+    p.add_argument("--video-lookat-z", type=float, default=0.6)
     return p.parse_args()
 
 
@@ -51,7 +58,7 @@ def main() -> None:
     else:
         run_dir = make_run_dir(REPO_ROOT / "runs", args.name)
         try:
-            mujoco.mj_saveLastXML(str(run_dir / "model.xml"), plant.model)
+            save_flat_model(run_dir / "model.xml", plant.model, model_dir / "meshes")
         except Exception as exc:
             print(f"could not save flattened model xml: {exc}")
         rec = Recorder(HDF5Backend(run_dir / "log.h5"))
@@ -108,6 +115,22 @@ def main() -> None:
     print(f"GRF sum  {np.round(sum(plant.grf().values()), 2)}")
     if run_dir is not None:
         print(f"run dir  {run_dir}")
+
+    if args.video:
+        if run_dir is None:
+            print("--video needs a log; drop --no-log")
+        else:
+            path, frames = render_run(
+                log_path=run_dir / "log.h5",
+                out_path=run_dir / "video.mp4",
+                model=load_model(run_dir, scene),
+                camera=args.video_camera,
+                fps=args.fps,
+                speed=args.video_speed,
+                distance=args.video_distance,
+                lookat_z=args.video_lookat_z,
+            )
+            print(f"video    {path} ({frames} frames)")
 
 
 if __name__ == "__main__":
