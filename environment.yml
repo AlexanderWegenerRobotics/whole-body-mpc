@@ -1,0 +1,28 @@
+name: wb-mpc
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - crocoddyl>=3.2
+  - pinocchio-python
+  - example-robot-data 
+
+  - mujoco>=3.2
+
+  - numpy
+  - scipy
+  - h5py
+  - pyyaml
+  - pandas
+
+  - matplotlib
+  - meshcat-python
+  - imageio
+  - imageio-ffmpeg
+
+  - pytest
+  - ipython
+  - pip
+  - pip:
+      - -e .

@@ -1,0 +1,22 @@
+# run outputs
+runs/
+
+# private working material
+literature/
+project_planning/
+model/meshes_unused/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# editor / os
+.vscode/
+.idea/
+.DS_Store

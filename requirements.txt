@@ -1,0 +1,11 @@
+numpy
+scipy
+h5py
+pyyaml
+pandas
+matplotlib
+meshcat
+imageio
+imageio-ffmpeg
+pytest
+-e .
