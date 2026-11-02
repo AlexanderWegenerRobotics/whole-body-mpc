@@ -6,6 +6,8 @@ optimal control problem up rather than by configuring an existing stack.
 Robot: Unitree G1, 29 DoF, torque controlled. Dynamics with Pinocchio, OCP with
 Crocoddyl (FDDP), plant in MuJoCo. Simulation only.
 
+> **Status: in progress.** Standing balance first; stepping and walking are not implemented yet.
+
 ## Install
 
 Pinocchio and Crocoddyl are C++ libraries with Python bindings and must come from
